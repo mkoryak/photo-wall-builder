@@ -9,6 +9,8 @@
     <title>Photo Wall Builder</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.1.1/css/bootstrap.css"/>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/ekko-lightbox/3.0.3a/ekko-lightbox.min.css"/>
 </head>
 <body>
 <!--[if lt IE 7]>
@@ -16,31 +18,33 @@
 <![endif]-->
 
 <style type="text/css">
-    body {
-        overflow-x: auto;
-    }
-    ul {
-        padding: 0;
-        margin: 0;
-        display: inline-block;
-        float:left;
-    }
-    li {
-        list-style: none;
-        border: 1px solid #ccc;
-        padding: 0;
-        margin: 0;
-    }
     div.photowall {
+        overflow: auto; /* clearfix */
+    }
+    img.thumb {
+        float: left;
+    }
+    li.brick a {
+        float: left;
+        display: inline-block;
         overflow: auto; /* clearfix */
     }
 </style>
 
+<!-- the photowall will replace this placeholder: -->
 ###PHOTOWALL###
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-<script>window.jQuery || document.write('<script src="js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
-
+<script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/ekko-lightbox/3.0.3a/ekko-lightbox.min.js"></script>
+<script>
+    $(function(){
+        $("a.lightbox").on("click", function(e){
+            e.preventDefault();
+            $(this).ekkoLightbox();
+        });
+    });
+</script>
 <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
 <script>
     (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=

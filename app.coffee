@@ -6,14 +6,30 @@ gm = require('gm')
 glob = require('glob')
 _ = require('underscore')
 
-thumbWidth = 300 #TODO: should come from user input
-thumbWidthPadding = 0
-thumbQuality = 80
-columnNum = 20
-classes =
-  ul: "column"
-  li: "container"
-  img: "thumb"
+options =
+  original:
+    maxWidth: 1200
+    quality: 95
+    dir: "/images/originals/"
+  thumb:
+    maxWidth: 200
+    padding: 2
+    quality: 85
+    dir: "/images/thumbs/"
+  columnNum: 15
+  lightbox:
+    title: "A Photo"
+    footer: "The cat is cute"
+  classes:
+    ul: "list-unstyled pull-left"
+    li: "brick"
+    img: "thumb"
+  startFresh: true
+
+makePaths = (type) ->
+  options[type].dir = path.normalize(options[type].dir.replace(/\\/g, "/")).replace(/^\/|\/$/g, '') #fix bad slahes, remove starting/ending slashes
+  options[type].path = path.join(__dirname, "output", options[type].dir)
+  fs.mkdirsSync(options[type].path)
 
 columnPartition = (images) ->
   heights = []
@@ -26,7 +42,7 @@ columnPartition = (images) ->
       map[h] = []
     map[h].push(img)
   )
-  parts = partition(heights, columnNum)
+  parts = partition(heights, options.columnNum)
 
   ret = []
   _.each(parts, (list) ->
@@ -38,14 +54,37 @@ columnPartition = (images) ->
   )
   return ret
 
+resizeImage = (obj, type, cb) ->
+  opts = options[type]
+  if obj.width > obj.height
+    width = opts.maxWidth
+  else
+    height = opts.maxWidth
+  gm(obj.src).quality(opts.quality).resize(width, height, ">").write(obj[type], (err) ->
+    if err
+      console.log("couldnt make #{type} of: ", obj.src, err)
+      obj[type] = null
+    cb()
+  )
+
+resizeImages = (type) -> #returns async friendly resize fn ;)
+  return (cb, results) ->
+    async.eachSeries(results.images, (obj, cb) ->
+      resizeImage(obj, type, cb)
+    , (err) ->
+      cb(null, _.filter(results.images, (img) -> img[type]))
+    )
+
+#fun starts here...
+if options.startFresh
+  fs.removeSync(path.join(__dirname, "output"))
 fs.mkdirsSync(path.join(__dirname, 'input'))
-fs.mkdirsSync(path.join(__dirname, 'output', 'thumbs'))
-fs.mkdirsSync(path.join(__dirname, 'output', 'images'))
+_.each(["original", "thumb"], makePaths)
 
 images = glob.sync(path.join(__dirname, 'input')+path.sep+"*.*") #get input images
 
 if images.length > 0
-  console.log("found #{images.length} images in input dir, starting work...")
+  console.log("found #{images.length} images in input dir, getting the bricks out...")
 else
   console.log("put some images into the 'input' dir to start doing some wall building!")
   return
@@ -56,33 +95,23 @@ async.auto(
       gm(image).size((err, size) ->
         if size
           basename = path.basename(image)
-          thumb = path.join(__dirname, 'output', 'thumbs', basename)
-          original = path.join(__dirname, 'output', 'images', basename)
-          fs.copySync(image, original)
-          cb(null, path: original, width: size.width, height: size.height, thumb: thumb, name: basename)
+          cb(null,
+            name: basename
+            width: size.width
+            height: size.height
+            src: image,
+            original: path.join(options.original.path, basename)
+            thumb: path.join(options.thumb.path, basename)
+          )
         else
-          console.log('couldnt get size of image: ', image)
+          console.log('couldnt get size of image (skipping it): ', image)
           cb(null, null)
       )
     , (err, images) ->
       cb(null, _.filter(images, (img) -> !!img))
     )
-  makeThumbs: ["images", (cb, results) ->
-    async.eachSeries(results.images, (obj, cb) ->
-      if obj.width > obj.height
-        width = thumbWidth
-      else
-        height = thumbWidth
-      gm(obj.path).quality(thumbQuality).resize(width, height, ">").write(obj.thumb, (err) ->
-        if err
-          console.log("couldnt make thumb of: ", obj.path, err)
-          obj.thumb = null
-        cb()
-      )
-    , (err) ->
-      cb(null, _.filter(results.images, (img) -> img.thumb))
-    )
-  ],
+  makeThumbs: ["images", resizeImages("thumb")],
+  makeOriginals: ["images", resizeImages("original")],
   partition: ['makeThumbs', (cb, results) ->
     cb(null, columnPartition(results.makeThumbs))
   ],
@@ -90,17 +119,22 @@ async.auto(
     cols = results.partition
     wall = _.map(cols, (col) ->
       lis = _.map(col, (obj) ->
-        return "\t\t<li class='#{classes.li}'><img src='/thumbs/#{obj.name}' class='#{classes.img}' data-orig='#{obj.name}'/></li>\n"
-      ).join("\n")
-      return "\t<ul class='#{classes.ul}'>\n#{lis}</ul>\n"
+        return """
+    <li class='#{options.classes.li}'>
+      <a href='/#{options.original.dir}/#{obj.name}' class='lightbox' data-title='#{options.lightbox.title}' data-footer='#{options.lightbox.footer}'>
+        <img src='/#{options.thumb.dir}/#{obj.name}' class='#{options.classes.img}'/>
+      </a>
+    </li>"""
+      ).join("")
+      return "<ul class='#{options.classes.ul}'>\n#{lis}</ul>\n"
     ).join("\n\n")
     cb(null, """
-<style>
-img.#{classes.img} {
-  width: #{thumbWidth}px;
+<style type='text/css'>
+img.#{options.classes.img.split(" ").join(".")} {
+  width: #{options.thumb.maxWidth}px;
 }
 div.photowall {
-  width: #{columnNum * (thumbWidth + thumbWidthPadding)}px;
+  width: #{options.columnNum * (options.thumb.maxWidth + options.thumb.padding)}px;
 }
 </style>
 <div class='photowall'>\n#{wall}</div>
