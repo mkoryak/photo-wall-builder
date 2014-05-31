@@ -1,0 +1,33 @@
+
+<style type='text/css'>
+    img.{{ options.classes.img.split(" ").join(".") }} {
+        width: {{ options.thumb.maxWidth }}px;
+    }
+    div.photowall {
+        width: {{ options.columnNum * (options.thumb.maxWidth + options.thumb.padding) }}px;
+    }
+</style>
+<div class="photowall">
+    {% for column in wall %}
+    <ul class="{{ options.classes.ul }}">
+        {% for brick in column %}
+            <li class="{{ options.classes.li }}">
+                <a href='/{{ options.original.dir }}/{{ brick.name }}' class='lightbox'
+                {%- if brick.title %}data-title='{{ brick.title }}' {% endif -%}
+                {%- if brick.desc %}data-footer='{{ brick.desc }}' {% endif -%}>
+                    <img src='/{{ options.thumb.dir }}/{{ brick.name }}' class='{{ options.classes.img }}'/>
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+    {% endfor %}
+</div>
+
+<script>
+    $(function(){
+        $("a.lightbox").on("click", function(e){
+            e.preventDefault();
+            $(this).ekkoLightbox();
+        });
+    });
+</script>

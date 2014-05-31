@@ -19,6 +19,7 @@
     "linear-partitioning": "~0.3.1",
     "glob": "~4.0.0",
     "underscore": "~1.6.0",
-    "fs-extra": "~0.9.1"
+    "fs-extra": "~0.9.1",
+    "nunjucks": "~1.0.5"
   }
 }
