@@ -4,7 +4,8 @@
         width: {{ options.thumb.maxWidth }}px;
     }
     div.photowall {
-        width: {{ options.columnNum * (options.thumb.maxWidth + options.thumb.padding) }}px;
+        width: {{ options.photowall.width }}px;
+        min-height: {{ options.photowall.height }}px;
     }
 </style>
 <div class="photowall">
@@ -13,7 +14,7 @@
         {% for brick in column %}
             <li class="{{ options.classes.li }}">
                 <a href='/{{ options.original.dir }}/{{ brick.name }}' class='lightbox'
-                {%- if brick.title %}data-title='{{ brick.title }}' {% endif -%}
+                   data-title='{{ brick.title|d(options.lightbox.defaultTitle) }}'
                 {%- if brick.desc %}data-footer='{{ brick.desc }}' {% endif -%}>
                     <img src='/{{ options.thumb.dir }}/{{ brick.name }}' class='{{ options.classes.img }}'/>
                 </a>
@@ -25,7 +26,8 @@
 
 <script>
     $(function(){
-        $("a.lightbox").on("click", function(e){
+        var $wall = $("div.photowall");
+        $wall.find("a.lightbox").on("click", function(e){
             e.preventDefault();
             $(this).ekkoLightbox();
         });
