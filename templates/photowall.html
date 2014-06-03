@@ -1,23 +1,92 @@
 
 <style type='text/css'>
-    img.{{ options.classes.img.split(" ").join(".") }} {
+    img.thumb {
         width: {{ options.thumb.maxWidth }}px;
     }
     div.photowall {
-        width: {{ options.photowall.width }}px;
+        position:relative;
+        min-width: {{ options.photowall.width }}px;
         min-height: {{ options.photowall.height }}px;
+    }
+    li.brick {
+        position:relative;
+        overflow: auto;
+    }
+    .brick-cover {
+        position:absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background-color: rgba(0, 0, 0, 0.5)
+    }
+    .brick-cover:hover {
+        background-color: rgba(0, 0, 0, 0.0)
+    }
+    .brick-cover:hover .fader {
+        display: block;
+    }
+    .fader {
+        display: none;
+        content: "";
+        position: absolute;
+        z-index: 1;
+    }
+    .fade-top, .fade-bottom {
+        height: 10px;
+        left: 0;
+        right: 0;
+    }
+    .fade-left, .fade-right {
+        width: 10px;
+        top: 0;
+        bottom: 0;
+    }
+    .fade-top {
+        top: 0;
+        background: linear-gradient(
+            to bottom,
+            rgba(0,0,0,0.6) 0%,
+            rgba(0,0,0,0) 100%
+        );
+    }
+    .fade-bottom {
+        bottom: 0;
+        background: linear-gradient(
+            to bottom,
+            rgba(0,0,0,0) 0%,
+            rgba(0,0,0,0.6) 100%
+        );
+    }
+    .fade-left {
+        left: 0;
+        background: linear-gradient(
+            to left,
+            rgba(0,0,0,0) 0%,
+            rgba(0,0,0,0.6) 100%
+        );
+    }
+    .fade-right {
+        right: 0;
+        background: linear-gradient(
+            to left,
+            rgba(0,0,0,0.6) 0%,
+            rgba(0,0,0,0) 100%
+        );
     }
 </style>
 <div class="photowall">
     {% for column in wall %}
-    <ul class="{{ options.classes.ul }}">
+    <ul class="list-unstyled pull-left">
         {% for brick in column %}
-            <li class="{{ options.classes.li }}">
-                <a href='/{{ options.original.dir }}/{{ brick.name }}' class='lightbox'
-                   data-title='{{ brick.title|d(options.lightbox.defaultTitle) }}'
-                {%- if brick.desc %}data-footer='{{ brick.desc }}' {% endif -%}>
-                    <img src='/{{ options.thumb.dir }}/{{ brick.name }}' class='{{ options.classes.img }}'/>
-                </a>
+            <li class="brick" data-image="/{{ options.original.dir }}/{{ brick.name }}" data-title='{{ brick.title|d(options.lightbox.defaultTitle) }}' data-footer='{{ brick.desc }}'>
+                <div class="brick-cover">
+                    <div class="fader fade-top"></div>
+                    <div class="fader fade-bottom"></div>
+                    <div class="fader fade-left"></div>
+                    <div class="fader fade-right"></div>
+                </div>
+                <img src='/{{ options.thumb.dir }}/{{ brick.name }}' class='thumb'/>
             </li>
         {% endfor %}
     </ul>
@@ -27,9 +96,14 @@
 <script>
     $(function(){
         var $wall = $("div.photowall");
-        $wall.find("a.lightbox").on("click", function(e){
+        $wall.find(".brick").on("click", function(e){
+            var $this = $(this)
             e.preventDefault();
-            $(this).ekkoLightbox();
+            $this.ekkoLightbox({
+                remote: $this.data('image'),
+                title: $this.data('title'),
+                footer: $this.data('footer')
+            });
         });
     });
 </script>

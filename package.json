@@ -20,6 +20,8 @@
     "glob": "~4.0.0",
     "underscore": "~1.6.0",
     "fs-extra": "~0.9.1",
-    "nunjucks": "~1.0.5"
+    "nunjucks": "~1.0.5",
+    "commander": "~2.2.0",
+    "node-static": "~0.7.3"
   }
 }
